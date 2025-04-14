@@ -1,0 +1,109 @@
+// schema.prisma
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+enum PapelUsuario {
+  FORNECEDOR
+  COMPRADOR
+  FUNCIONARIO
+  ADMIN
+}
+
+enum TipoEmpresa {
+  COMPRADORA
+  FORNECEDORA
+  AMBAS
+}
+
+enum TipoVinculo {
+  DONO
+  SOCIO
+  FUNCIONARIO
+}
+
+enum CotacaoStatus {
+  PENDENTE
+  APROVADA
+  RECUSADA
+}
+
+model Usuario {
+  id       Int              @id @default(autoincrement())
+  nome     String
+  email    String           @unique
+  senha    String
+  papel    String
+  empresas UsuarioEmpresa[]
+}
+
+model Empresa {
+  id                      Int                   @id @default(autoincrement())
+  razaoSocial             String
+  cnpj                    String                @unique
+  tipoEmpresa             String?
+  usuarios                UsuarioEmpresa[]
+  produtos                Produto[]
+  cotacoesComoCompradora  Cotacao[]             @relation("Compradora")
+  cotacoesComoFornecedora Cotacao[]             @relation("Fornecedora")
+  avaliacoesRecebidas     AvaliacaoFornecedor[] @relation("FornecedorAvaliado")
+  avaliacoesFeitas        AvaliacaoFornecedor[] @relation("AvaliadorEmpresa")
+}
+
+model UsuarioEmpresa {
+  id                   Int      @id @default(autoincrement())
+  usuario              Usuario  @relation(fields: [usuarioId], references: [id])
+  usuarioId            Int
+  empresa              Empresa  @relation(fields: [empresaId], references: [id])
+  empresaId            Int
+  tipoVinculo          String?
+  percentualSocietario Float?
+  dataEntrada          DateTime
+}
+
+model Produto {
+  id            Int           @id @default(autoincrement())
+  nome          String
+  descricao     String
+  precoUnitario Float
+  fornecedor    Empresa       @relation(fields: [fornecedorId], references: [id])
+  fornecedorId  Int
+  cotacoes      CotacaoItem[]
+}
+
+model Cotacao {
+  id                   Int           @id @default(autoincrement())
+  empresaCompradora    Empresa       @relation("Compradora", fields: [empresaCompradoraId], references: [id])
+  empresaCompradoraId  Int
+  empresaFornecedora   Empresa       @relation("Fornecedora", fields: [empresaFornecedoraId], references: [id])
+  empresaFornecedoraId Int
+  dataSolicitacao      DateTime
+  status               String
+  itens                CotacaoItem[]
+}
+
+model CotacaoItem {
+  id            Int     @id @default(autoincrement())
+  cotacao       Cotacao @relation(fields: [cotacaoId], references: [id])
+  cotacaoId     Int
+  produto       Produto @relation(fields: [produtoId], references: [id])
+  produtoId     Int
+  quantidade    Int
+  precoUnitario Float
+}
+
+model AvaliacaoFornecedor {
+  id           Int     @id @default(autoincrement())
+  fornecedor   Empresa @relation("FornecedorAvaliado", fields: [fornecedorId], references: [id])
+  fornecedorId Int
+  avaliador    Empresa @relation("AvaliadorEmpresa", fields: [avaliadorId], references: [id])
+  avaliadorId  Int
+  nota         Int
+  comentario   String
+}
