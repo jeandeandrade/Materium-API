@@ -75,6 +75,8 @@ model Produto {
   fornecedor    Empresa       @relation(fields: [fornecedorId], references: [id])
   fornecedorId  Int
   cotacoes      CotacaoItem[]
+
+  @@unique([nome, fornecedorId])
 }
 
 model Cotacao {
